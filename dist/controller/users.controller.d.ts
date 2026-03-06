@@ -1,4 +1,5 @@
 import { usersService } from 'src/service/users.service';
+export declare const Public: () => import("@nestjs/common").CustomDecorator<string>;
 export declare class usersController {
     private readonly testService;
     constructor(testService: usersService);
@@ -19,4 +20,22 @@ export declare class usersController {
     deleteMenu(id: number): Promise<any>;
     getRoleMap(): Promise<any>;
     updateRoleMap(body: any): Promise<any>;
+    getCategories(): Promise<any>;
+    createCategory(body: any): Promise<any>;
+    updateCategory(id: number, body: any): Promise<any>;
+    deleteCategory(id: number): Promise<any>;
+    getProvinces(): Promise<any>;
+    createProvince(body: any): Promise<any>;
+    updateProvince(id: number, body: any): Promise<any>;
+    deleteProvince(id: number): Promise<any>;
+    getDistricts(provinceId?: number): Promise<any>;
+    createDistrict(body: any): Promise<any>;
+    updateDistrict(id: number, body: any): Promise<any>;
+    deleteDistrict(id: number): Promise<any>;
+    getDashboard(): Promise<any>;
+    requestOtp(body: any): Promise<any>;
+    verifyOtp(body: any): Promise<any>;
+    registerWithOtp(body: any): Promise<any>;
+    selfResetPassword(body: any): Promise<any>;
+    adminResetPassword(id: number, body: any, req: any): Promise<any>;
 }

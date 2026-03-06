@@ -1,19 +1,24 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  canActivate(context: ExecutionContext) {
-    return super.canActivate(context);
+  constructor(private reflector: Reflector) {
+    super();
   }
 
-  handleRequest(err: any, user: any) {
-    if (err || !user) {
-      throw new UnauthorizedException({
-        responseCode: '401',
-        message: 'Unauthorized - Invalid or missing token',
-      });
-    }
-    return user;
+  canActivate(context: ExecutionContext) {
+    // Check if the route has @Public() decorator
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),   // method-level metadata
+      context.getClass(),     // class-level metadata
+    ]);
+
+    // If @Public(), skip JWT validation entirely
+    if (isPublic) return true;
+
+    // Otherwise run normal JWT guard
+    return super.canActivate(context);
   }
 }

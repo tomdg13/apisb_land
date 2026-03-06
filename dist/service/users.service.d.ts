@@ -11,7 +11,6 @@ export declare class usersService {
     unlock(id: number): Promise<any>;
     getBranches(): Promise<any>;
     getCountersByBranch(branchId: number): Promise<any>;
-    register(dto: any): Promise<any>;
     getRoles(): Promise<any>;
     createRole(body: any): Promise<any>;
     updateRole(id: number, body: any): Promise<any>;
@@ -22,4 +21,24 @@ export declare class usersService {
     deleteMenu(id: number): Promise<any>;
     getRoleMap(): Promise<any>;
     updateRoleMap(body: any): Promise<any>;
+    getCategories(): Promise<any>;
+    createCategory(body: any): Promise<any>;
+    updateCategory(id: number, body: any): Promise<any>;
+    deleteCategory(id: number): Promise<any>;
+    getProvinces(): Promise<any>;
+    createProvince(body: any): Promise<any>;
+    updateProvince(id: number, body: any): Promise<any>;
+    deleteProvince(id: number): Promise<any>;
+    getDistricts(provinceId?: number): Promise<any>;
+    createDistrict(body: any): Promise<any>;
+    updateDistrict(id: number, body: any): Promise<any>;
+    deleteDistrict(id: number): Promise<any>;
+    getDashboardStats(): Promise<any>;
+    private _genOtp;
+    requestOtp(phone: string, type?: string): Promise<any>;
+    verifyOtp(phone: string, code: string, type?: string): Promise<any>;
+    registerWithOtp(body: any): Promise<any>;
+    register(dto: any): Promise<any>;
+    adminResetPassword(userId: number, newPassword: string, resetByUserId?: number): Promise<any>;
+    selfResetPassword(phone: string, newPassword: string): Promise<any>;
 }
