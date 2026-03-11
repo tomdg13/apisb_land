@@ -25,7 +25,29 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
         ]);
         if (isPublic)
             return true;
+        const isOptional = this.reflector.getAllAndOverride('isOptionalAuth', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (isOptional) {
+            const request = context.switchToHttp().getRequest();
+            const authHeader = request.headers['authorization'];
+            if (!authHeader)
+                return true;
+            return super.canActivate(context);
+        }
         return super.canActivate(context);
+    }
+    handleRequest(err, user, info, context) {
+        const isOptional = this.reflector.getAllAndOverride('isOptionalAuth', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (isOptional)
+            return user ?? null;
+        if (err || !user)
+            throw err || new Error('Unauthorized');
+        return user;
     }
 };
 exports.JwtAuthGuard = JwtAuthGuard;

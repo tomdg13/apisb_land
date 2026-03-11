@@ -7,7 +7,7 @@ export declare class ListingsController {
     private readonly config;
     constructor(listingsService: ListingsService, config: ConfigService);
     private get appUrl();
-    getAll(query: ListingQueryDto): Promise<any>;
+    getAll(query: ListingQueryDto, req: any): Promise<any>;
     getCategories(): Promise<any>;
     getProvinces(): Promise<any>;
     getDistricts(id: number): Promise<any>;

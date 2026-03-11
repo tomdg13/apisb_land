@@ -17,6 +17,7 @@ export declare class CreateListingDto {
     longitude?: number;
     map_url?: string;
     listing_type?: 'sale' | 'rent' | 'lease';
+    status?: 'draft' | 'pending' | 'active';
     contact_name?: string;
     contact_phone?: string;
     contact_email?: string;

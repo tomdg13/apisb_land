@@ -17,6 +17,7 @@ async function bootstrap() {
   });
   
   app.use(bodyParser.json({ limit: '30mb' }));
+  app.use(bodyParser.urlencoded({ limit: '30mb', extended: true })); // ✅ multipart size limit
 
   // ✅ CORS ກ່ອນ static files
   app.enableCors({

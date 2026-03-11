@@ -13,6 +13,7 @@ async function bootstrap() {
         type: common_1.VersioningType.URI,
     });
     app.use(bodyParser.json({ limit: '30mb' }));
+    app.use(bodyParser.urlencoded({ limit: '30mb', extended: true }));
     app.enableCors({
         origin: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],

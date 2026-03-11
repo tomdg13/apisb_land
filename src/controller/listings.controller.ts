@@ -11,6 +11,7 @@ import { v4 as uuid } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { ListingsService } from 'src/service/listings.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { OptionalAuth } from 'src/auth/decorators';
 import {
   CreateListingDto, UpdateListingDto,
   LandDetailDto, CreateInquiryDto, ListingQueryDto,
@@ -19,12 +20,12 @@ import {
 // ── Multer config ──────────────────────────────────────────────
 const imageStorage = diskStorage({
   destination: './uploads/listings',
-  filename: (_req, files, cb) => {
-    cb(null, `${uuid()}${extname(files.originalname)}`);
+  filename: (_req, file, cb) => {
+    cb(null, `${uuid()}${extname(file.originalname)}`);
   },
 });
-const imageFilter = (_req: any, files: Express.Multer.File, cb: any) => {
-  if (!files.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+const imageFilter = (_req: any, file: Express.Multer.File, cb: any) => {
+  if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
     return cb(new BadRequestException('Only JPG, PNG, WEBP images allowed'), false);
   }
   cb(null, true);
@@ -49,8 +50,11 @@ export class ListingsController {
    * &listing_type=sale&min_price=&max_price=&search=&sort_by=price&sort_order=ASC
    */
   @Get()
-  async getAll(@Query() query: ListingQueryDto) {
-    return this.listingsService.getAll(query);
+  @UseGuards(JwtAuthGuard)
+  @OptionalAuth()
+  async getAll(@Query() query: ListingQueryDto, @Request() req: any) {
+    const userId = req.user?.userId ?? null;
+    return this.listingsService.getAll(query, userId);
   }
 
   /**

@@ -9,6 +9,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from './module/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ListingsModule } from './module/listings.module';
+import { messagesModule } from './module/messages.module';
 
 
 
@@ -37,6 +38,7 @@ import { ListingsModule } from './module/listings.module';
     UsersModule,
     AuthModule,  // <-- add this
     ListingsModule,
+    messagesModule
   ],
   controllers: [],
 })

@@ -4,7 +4,7 @@ import { CreateListingDto, UpdateListingDto, LandDetailDto, CreateInquiryDto, Li
 export declare class ListingsService {
     private dataSource;
     constructor(dataSource: DataSource);
-    getAll(query: ListingQueryDto): Promise<any>;
+    getAll(query: ListingQueryDto, userId?: number | null): Promise<any>;
     getOne(id: number): Promise<any>;
     getMyListings(userId: number, query: ListingQueryDto): Promise<any>;
     create(dto: CreateListingDto, userId: number): Promise<any>;

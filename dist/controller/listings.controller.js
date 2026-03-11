@@ -21,15 +21,16 @@ const uuid_1 = require("uuid");
 const config_1 = require("@nestjs/config");
 const listings_service_1 = require("../service/listings.service");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const decorators_1 = require("../auth/decorators");
 const listings_dto_1 = require("../dto/listings.dto");
 const imageStorage = (0, multer_1.diskStorage)({
     destination: './uploads/listings',
-    filename: (_req, files, cb) => {
-        cb(null, `${(0, uuid_1.v4)()}${(0, path_1.extname)(files.originalname)}`);
+    filename: (_req, file, cb) => {
+        cb(null, `${(0, uuid_1.v4)()}${(0, path_1.extname)(file.originalname)}`);
     },
 });
-const imageFilter = (_req, files, cb) => {
-    if (!files.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+const imageFilter = (_req, file, cb) => {
+    if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
         return cb(new common_1.BadRequestException('Only JPG, PNG, WEBP images allowed'), false);
     }
     cb(null, true);
@@ -42,8 +43,9 @@ let ListingsController = class ListingsController {
     get appUrl() {
         return this.config.get('APP_URL', 'http://localhost:3000');
     }
-    async getAll(query) {
-        return this.listingsService.getAll(query);
+    async getAll(query, req) {
+        const userId = req.user?.userId ?? null;
+        return this.listingsService.getAll(query, userId);
     }
     async getCategories() {
         return this.listingsService.getCategories();
@@ -128,9 +130,12 @@ let ListingsController = class ListingsController {
 exports.ListingsController = ListingsController;
 __decorate([
     (0, common_1.Get)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, decorators_1.OptionalAuth)(),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [listings_dto_1.ListingQueryDto]),
+    __metadata("design:paramtypes", [listings_dto_1.ListingQueryDto, Object]),
     __metadata("design:returntype", Promise)
 ], ListingsController.prototype, "getAll", null);
 __decorate([

@@ -12,7 +12,7 @@ export class ListingsService {
   // ==========================================
   // GET ALL LISTINGS (public, paginated, filtered)
   // ==========================================
-  async getAll(query: ListingQueryDto): Promise<any> {
+  async getAll(query: ListingQueryDto, userId: number | null = null): Promise<any> {
     try {
       const {
         page = 1, limit = 12,
@@ -74,12 +74,14 @@ export class ListingsService {
            u.avatar_url  AS seller_avatar,
            (SELECT image_url FROM listing_images li
             WHERE li.listing_id = l.listing_id AND li.is_cover = 1
-            LIMIT 1) AS cover_image
+            LIMIT 1) AS cover_image,
+           ${userId ? 'CASE WHEN f.favorite_id IS NOT NULL THEN 1 ELSE 0 END' : '0'} AS is_favorite
          FROM listings l
          JOIN users      u ON u.user_id      = l.user_id
          JOIN categories c ON c.category_id  = l.category_id
          LEFT JOIN provinces p ON p.province_id = l.province_id
          LEFT JOIN districts d ON d.district_id = l.district_id
+         ${userId ? 'LEFT JOIN favorites f ON f.listing_id = l.listing_id AND f.user_id = ' + userId : ''}
          WHERE ${where}
          ORDER BY l.${sortCol} ${sortDir}
          LIMIT ? OFFSET ?`,
@@ -164,7 +166,7 @@ export class ListingsService {
   // ==========================================
   // GET MY LISTINGS (current user)
   // ==========================================
-async getMyListings(userId: number, query: ListingQueryDto): Promise<any> {
+  async getMyListings(userId: number, query: ListingQueryDto): Promise<any> {
     try {
       const { page = 1, limit = 12, status } = query;
       const offset = (Number(page) - 1) * Number(limit);
@@ -184,46 +186,30 @@ async getMyListings(userId: number, query: ListingQueryDto): Promise<any> {
         `SELECT
            l.listing_id, l.title, l.price, l.currency,
            l.area, l.area_unit, l.listing_type, l.status,
-           l.is_featured, l.views_count, l.created_date, l.expires_at,
-           l.reject_reason,
+           l.is_featured, l.views_count, l.negotiable,
+           l.contact_phone, l.contact_name,
+           l.created_date, l.expires_at, l.reject_reason,
            c.name AS category,
            p.province_name AS province,
+           d.district_name AS district,
            (SELECT image_url FROM listing_images li
             WHERE li.listing_id = l.listing_id AND li.is_cover = 1
             LIMIT 1) AS cover_image,
-           (SELECT COUNT(*) FROM listing_images li
-            WHERE li.listing_id = l.listing_id) AS image_count,
-           (SELECT JSON_ARRAYAGG(
-              JSON_OBJECT(
-                'image_id', li.image_id,
-                'image_url', li.image_url,
-                'is_cover', li.is_cover
-              )
-            )
-            FROM listing_images li
-            WHERE li.listing_id = l.listing_id
-            ORDER BY li.is_cover DESC, li.sort_order ASC
-           ) AS images
+           CASE WHEN f.favorite_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
          FROM listings l
          JOIN categories c ON c.category_id = l.category_id
          LEFT JOIN provinces p ON p.province_id = l.province_id
+         LEFT JOIN districts d ON d.district_id = l.district_id
+         LEFT JOIN favorites f ON f.listing_id = l.listing_id AND f.user_id = ${userId}
          WHERE ${where}
          ORDER BY l.created_date DESC
          LIMIT ? OFFSET ?`,
         [...params, Number(limit), offset],
       );
 
-      // Parse images JSON string → array
-      const parsed = data.map((row: any) => ({
-        ...row,
-        images: row.images
-          ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images)
-          : [],
-      }));
-
       return {
         responseCode: '00',
-        data: parsed,
+        data,
         meta: { total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) },
       };
     } catch (error) {

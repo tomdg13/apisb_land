@@ -67,6 +67,10 @@ export class CreateListingDto {
   @IsOptional() @IsIn(['sale', 'rent', 'lease'])
   listing_type?: 'sale' | 'rent' | 'lease';
 
+  // ✅ Allow frontend to set status on create
+  @IsOptional() @IsIn(['draft', 'pending', 'active'])
+  status?: 'draft' | 'pending' | 'active';
+
   @IsOptional() @IsString()
   contact_name?: string;
 
