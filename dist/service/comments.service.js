@@ -84,6 +84,29 @@ let CommentsService = class CommentsService {
             }
             const result = await this.dataSource.query(`INSERT INTO listing_comments (listing_id, user_id, parent_id, comment_text)
          VALUES (?, ?, ?, ?)`, [listingId, userId, parentId ?? null, text.trim()]);
+            try {
+                if (parentId) {
+                    const [pc] = await this.dataSource.query(`SELECT c.user_id, u.full_name, l.title
+             FROM listing_comments c
+             JOIN users u ON u.user_id = ?
+             JOIN listings l ON l.listing_id = ?
+             WHERE c.comment_id = ?`, [userId, listingId, parentId]);
+                    if (pc && pc.user_id !== userId) {
+                        await this.dataSource.query(`INSERT INTO notifications (user_id, type, title, body, actor_id, ref_id)
+               VALUES (?, 'reply', 'ຕອບກັບຄໍາເຫັນ', ?, ?, ?)`, [pc.user_id, pc.full_name + ' ໄດ້ຕອບກັບຄໍາເຫັນໃນ "' + pc.title + '"', userId, listingId]);
+                    }
+                }
+                else {
+                    const [lo] = await this.dataSource.query(`SELECT l.user_id, u.full_name AS commenter_name, l.title
+             FROM listings l JOIN users u ON u.user_id = ?
+             WHERE l.listing_id = ?`, [userId, listingId]);
+                    if (lo && lo.user_id !== userId) {
+                        await this.dataSource.query(`INSERT INTO notifications (user_id, type, title, body, actor_id, ref_id)
+               VALUES (?, 'comment', 'ຄໍາເຫັນໃໝ່', ?, ?, ?)`, [lo.user_id, lo.commenter_name + ' ໄດ້ comment ໃນ "' + lo.title + '"', userId, listingId]);
+                    }
+                }
+            }
+            catch (_) { }
             const [newComment] = await this.dataSource.query(`SELECT c.*, u.full_name, u.avatar_url
          FROM listing_comments c
          JOIN users u ON u.user_id = c.user_id

@@ -69,9 +69,10 @@ export class ListingsService {
            c.icon        AS category_icon,
            p.province_name AS province,
            d.district_name AS district,
+           u.user_id     AS seller_id,
            u.full_name   AS seller_name,
-           u.phone_number AS seller_phone,
            u.avatar_url  AS seller_avatar,
+           u.phone_number AS seller_phone,
            (SELECT image_url FROM listing_images li
             WHERE li.listing_id = l.listing_id AND li.is_cover = 1
             LIMIT 1) AS cover_image,
@@ -123,9 +124,10 @@ export class ListingsService {
            p.province_name AS province,
            d.district_name AS district,
            v.village_name  AS village,
+           u.user_id     AS seller_id,
            u.full_name   AS seller_name,
-           u.phone_number AS seller_phone,
            u.avatar_url  AS seller_avatar,
+           u.phone_number AS seller_phone,
            u.email       AS seller_email
          FROM listings l
          JOIN users      u ON u.user_id      = l.user_id

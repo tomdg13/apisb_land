@@ -12,6 +12,7 @@ import { ListingsModule } from './module/listings.module';
 import { messagesModule } from './module/messages.module';
 import { commentsModule } from './module/comments.module';
 import { profileModule } from './module/profile.module';
+import { NotificationsModule } from './module/notifications.module';
 
 
 
@@ -24,7 +25,6 @@ import { profileModule } from './module/profile.module';
       isGlobal: true,
     }),
 
-    
       TypeOrmModule.forRoot({
       name: 'default',
       type: 'mysql',
@@ -35,14 +35,14 @@ import { profileModule } from './module/profile.module';
       database: 'sbland',
     }),
    
-
     ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,  // <-- add this
     ListingsModule,
     messagesModule,
     commentsModule,
-    profileModule
+    profileModule,
+    NotificationsModule
   ],
   controllers: [],
 })
@@ -53,5 +53,3 @@ export class AppModule {
   //   consumer.apply(JwtMiddleware).forRoutes('*'); // Apply to all routes
   // }
 }
-
-
