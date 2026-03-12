@@ -10,6 +10,8 @@ import { UsersModule } from './module/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ListingsModule } from './module/listings.module';
 import { messagesModule } from './module/messages.module';
+import { commentsModule } from './module/comments.module';
+import { profileModule } from './module/profile.module';
 
 
 
@@ -38,7 +40,9 @@ import { messagesModule } from './module/messages.module';
     UsersModule,
     AuthModule,  // <-- add this
     ListingsModule,
-    messagesModule
+    messagesModule,
+    commentsModule,
+    profileModule
   ],
   controllers: [],
 })

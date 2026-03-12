@@ -6,20 +6,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UsersModule = void 0;
+exports.profileModule = void 0;
 const common_1 = require("@nestjs/common");
-const users_controller_1 = require("../controller/users.controller");
-const users_service_1 = require("../service/users.service");
-const roles_controller_1 = require("../controller/roles.controller");
-const roles_service_1 = require("../service/roles.service");
-let UsersModule = class UsersModule {
+const profile_controller_1 = require("../controller/profile.controller");
+const profile_service_1 = require("../service/profile.service");
+let profileModule = class profileModule {
 };
-exports.UsersModule = UsersModule;
-exports.UsersModule = UsersModule = __decorate([
+exports.profileModule = profileModule;
+exports.profileModule = profileModule = __decorate([
     (0, common_1.Module)({
-        controllers: [users_controller_1.usersController, roles_controller_1.RolesController],
-        providers: [users_service_1.usersService, roles_service_1.RolesService],
-        exports: [users_service_1.usersService],
+        controllers: [profile_controller_1.ProfileController],
+        providers: [profile_service_1.ProfileService],
+        exports: [profile_service_1.ProfileService],
     })
-], UsersModule);
-//# sourceMappingURL=users.module%20copy.js.map
+], profileModule);
+//# sourceMappingURL=profile.module.js.map

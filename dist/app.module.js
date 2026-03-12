@@ -19,6 +19,8 @@ const users_module_1 = require("./module/users.module");
 const auth_module_1 = require("./auth/auth.module");
 const listings_module_1 = require("./module/listings.module");
 const messages_module_1 = require("./module/messages.module");
+const comments_module_1 = require("./module/comments.module");
+const profile_module_1 = require("./module/profile.module");
 let AppModule = class AppModule {
     constructor(connection) {
         this.connection = connection;
@@ -44,7 +46,9 @@ exports.AppModule = AppModule = __decorate([
             users_module_1.UsersModule,
             auth_module_1.AuthModule,
             listings_module_1.ListingsModule,
-            messages_module_1.messagesModule
+            messages_module_1.messagesModule,
+            comments_module_1.commentsModule,
+            profile_module_1.profileModule
         ],
         controllers: [],
     }),
