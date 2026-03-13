@@ -1,4 +1,5 @@
 import { usersService } from 'src/service/users.service';
+import { CustomerpDto } from 'src/dto/users.dto';
 export declare const Public: () => import("@nestjs/common").CustomDecorator<string>;
 export declare class usersController {
     private readonly testService;
@@ -38,4 +39,8 @@ export declare class usersController {
     registerWithOtp(body: any): Promise<any>;
     selfResetPassword(body: any): Promise<any>;
     adminResetPassword(id: number, body: any, req: any): Promise<any>;
+    OtpDriverByPhone(dto: CustomerpDto): Promise<any>;
+    addOtp(body: {
+        phone: string;
+    }): Promise<any>;
 }

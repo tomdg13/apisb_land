@@ -5,13 +5,14 @@ import {
 } from '@nestjs/common';
 import { usersService } from 'src/service/users.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CustomerpDto } from 'src/dto/users.dto';
 
 export const Public = () => SetMetadata('isPublic', true);
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class usersController {
-  constructor(private readonly testService: usersService) {}
+  constructor(private readonly testService: usersService) { }
 
   // ── USERS ─────────────────────────────────────────────────
 
@@ -214,16 +215,20 @@ export class usersController {
   @Public()
   @Post('otp/request')
   async requestOtp(@Body() body: any) {
-    try { return await this.testService.requestOtp(
-      body.phone_number, body.type || 'register'); }
+    try {
+      return await this.testService.requestOtp(
+        body.phone_number, body.type || 'register');
+    }
     catch (e) { throw new HttpException({ message: e.message }, HttpStatus.INTERNAL_SERVER_ERROR); }
   }
 
   @Public()
   @Post('otp/verify')
   async verifyOtp(@Body() body: any) {
-    try { return await this.testService.verifyOtp(
-      body.phone_number, body.otp_code, body.type || 'register'); }
+    try {
+      return await this.testService.verifyOtp(
+        body.phone_number, body.otp_code, body.type || 'register');
+    }
     catch (e) { throw new HttpException({ message: e.message }, HttpStatus.INTERNAL_SERVER_ERROR); }
   }
 
@@ -237,8 +242,10 @@ export class usersController {
   @Public()
   @Post('self-reset-password')
   async selfResetPassword(@Body() body: any) {
-    try { return await this.testService.selfResetPassword(
-      body.phone_number, body.new_password); }
+    try {
+      return await this.testService.selfResetPassword(
+        body.phone_number, body.new_password);
+    }
     catch (e) { throw new HttpException({ message: e.message }, HttpStatus.INTERNAL_SERVER_ERROR); }
   }
 
@@ -250,8 +257,26 @@ export class usersController {
     @Body() body: any,
     @Req() req: any,
   ) {
-    try { return await this.testService.adminResetPassword(
-      id, body.new_password, req.user?.userId); }
+    try {
+      return await this.testService.adminResetPassword(
+        id, body.new_password, req.user?.userId);
+    }
     catch (e) { throw new HttpException({ message: e.message }, HttpStatus.INTERNAL_SERVER_ERROR); }
   }
+
+
+
+  // request OTP for driver by phone number
+  @Post('DriverOTPByPhone')
+  async OtpDriverByPhone(@Body() dto: CustomerpDto) {
+    return await this.testService.OtpDriverByPhone(dto);
+  }
+
+ @Post('addotp')
+  async addOtp(@Body() body: { phone: string }) {
+       console.log('Received phone number for OTP:', body.phone);
+    return this.testService.createOTP(body);
+  }
+
+
 }

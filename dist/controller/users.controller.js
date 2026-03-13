@@ -16,6 +16,7 @@ exports.usersController = exports.Public = void 0;
 const common_1 = require("@nestjs/common");
 const users_service_1 = require("../service/users.service");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const users_dto_1 = require("../dto/users.dto");
 const Public = () => (0, common_1.SetMetadata)('isPublic', true);
 exports.Public = Public;
 let usersController = class usersController {
@@ -302,6 +303,13 @@ let usersController = class usersController {
             throw new common_1.HttpException({ message: e.message }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async OtpDriverByPhone(dto) {
+        return await this.testService.OtpDriverByPhone(dto);
+    }
+    async addOtp(body) {
+        console.log('Received phone number for OTP:', body.phone);
+        return this.testService.createOTP(body);
+    }
 };
 exports.usersController = usersController;
 __decorate([
@@ -553,6 +561,20 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], usersController.prototype, "adminResetPassword", null);
+__decorate([
+    (0, common_1.Post)('DriverOTPByPhone'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [users_dto_1.CustomerpDto]),
+    __metadata("design:returntype", Promise)
+], usersController.prototype, "OtpDriverByPhone", null);
+__decorate([
+    (0, common_1.Post)('addotp'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], usersController.prototype, "addOtp", null);
 exports.usersController = usersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

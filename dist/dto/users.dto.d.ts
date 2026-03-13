@@ -8,3 +8,12 @@ export declare class RegisterDto {
     full_name: string;
     password: string;
 }
+export declare class CustomerpDto {
+    phone?: string;
+    id?: number;
+}
+export interface TelbizSmsRequest {
+    title: string;
+    phone: string;
+    message: string;
+}

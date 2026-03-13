@@ -13,9 +13,11 @@ exports.usersService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
 const bcrypt = require("bcrypt");
+const sms_service_1 = require("./sms.service");
 let usersService = class usersService {
-    constructor(dataSource) {
+    constructor(dataSource, smsService) {
         this.dataSource = dataSource;
+        this.smsService = smsService;
     }
     async find(userstdto) {
         const { userId, password } = userstdto;
@@ -214,8 +216,10 @@ let usersService = class usersService {
             const inUse = await this.dataSource.query(`SELECT COUNT(*) as cnt FROM users WHERE role =
          (SELECT role_name FROM roles WHERE role_id = ?)`, [id]);
             if (inUse[0].cnt > 0)
-                return { responseCode: '01',
-                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} users ໃຊ້ role ນີ້` };
+                return {
+                    responseCode: '01',
+                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} users ໃຊ້ role ນີ້`
+                };
             await this.dataSource.query(`DELETE FROM roles WHERE role_id = ?`, [id]);
             return { responseCode: '00', message: 'Role deleted successfully' };
         }
@@ -262,8 +266,10 @@ let usersService = class usersService {
         try {
             const children = await this.dataSource.query(`SELECT COUNT(*) as cnt FROM menus WHERE parent_menu_id = ?`, [id]);
             if (children[0].cnt > 0)
-                return { responseCode: '01',
-                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${children[0].cnt} sub-menus` };
+                return {
+                    responseCode: '01',
+                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${children[0].cnt} sub-menus`
+                };
             await this.dataSource.query(`DELETE FROM role_menu_mapping WHERE menu_id = ?`, [id]);
             await this.dataSource.query(`DELETE FROM menus WHERE menu_id = ?`, [id]);
             return { responseCode: '00', message: 'Menu deleted successfully' };
@@ -354,8 +360,10 @@ let usersService = class usersService {
         try {
             const inUse = await this.dataSource.query(`SELECT COUNT(*) as cnt FROM listings WHERE category_id = ?`, [id]);
             if (inUse[0].cnt > 0)
-                return { responseCode: '01',
-                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ category ນີ້` };
+                return {
+                    responseCode: '01',
+                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ category ນີ້`
+                };
             await this.dataSource.query(`DELETE FROM categories WHERE category_id = ?`, [id]);
             return { responseCode: '00', message: 'Category deleted successfully' };
         }
@@ -399,8 +407,10 @@ let usersService = class usersService {
         try {
             const inUse = await this.dataSource.query(`SELECT COUNT(*) as cnt FROM listings WHERE province_id = ?`, [id]);
             if (inUse[0].cnt > 0)
-                return { responseCode: '01',
-                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ province ນີ້` };
+                return {
+                    responseCode: '01',
+                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ province ນີ້`
+                };
             await this.dataSource.query(`DELETE FROM provinces WHERE province_id = ?`, [id]);
             return { responseCode: '00', message: 'Province deleted successfully' };
         }
@@ -447,8 +457,10 @@ let usersService = class usersService {
         try {
             const inUse = await this.dataSource.query(`SELECT COUNT(*) as cnt FROM listings WHERE district_id = ?`, [id]);
             if (inUse[0].cnt > 0)
-                return { responseCode: '01',
-                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ district ນີ້` };
+                return {
+                    responseCode: '01',
+                    message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ district ນີ້`
+                };
             await this.dataSource.query(`DELETE FROM districts WHERE district_id = ?`, [id]);
             return { responseCode: '00', message: 'District deleted successfully' };
         }
@@ -536,6 +548,16 @@ let usersService = class usersService {
             await this.dataSource.query(`INSERT INTO user_otp (phone_number, otp_code, otp_type, expires_at)
          VALUES (?, ?, ?, ?)`, [phone, otp, type, expiresAt]);
             console.log(`[OTP] ${phone} → ${otp} (${type})`);
+            try {
+                await this.smsService.sendSMS({
+                    title: 'OTP',
+                    phone: phone,
+                    message: `Your OTP code is ${otp}`,
+                }, 'Sabaikee-App');
+            }
+            catch (smsErr) {
+                console.error('[OTP] SMS failed:', smsErr.message);
+            }
             return { responseCode: '00', message: 'OTP ສົ່ງສຳເລັດ' };
         }
         catch (error) {
@@ -560,8 +582,10 @@ let usersService = class usersService {
             }
             await this.dataSource.query(`UPDATE user_otp SET attempt_count = attempt_count + 1 WHERE otp_id = ?`, [otp.otp_id]);
             if (otp.otp_code !== code)
-                return { responseCode: '04',
-                    message: `OTP ບໍ່ຖືກຕ້ອງ (ເຫຼືອ ${4 - otp.attempt_count} ຄັ້ງ)` };
+                return {
+                    responseCode: '04',
+                    message: `OTP ບໍ່ຖືກຕ້ອງ (ເຫຼືອ ${4 - otp.attempt_count} ຄັ້ງ)`
+                };
             await this.dataSource.query(`UPDATE user_otp SET is_verified = 1, is_used = 1, verified_at = NOW()
          WHERE otp_id = ?`, [otp.otp_id]);
             return { responseCode: '00', message: 'OTP ຖືກຕ້ອງ', verified: true };
@@ -587,8 +611,10 @@ let usersService = class usersService {
             const result = await this.dataSource.query(`INSERT INTO users
            (username, phone_number, password_hash, full_name, role, is_active, created_by)
          VALUES (?, ?, ?, ?, 'Customer', 1, 'self-register')`, [phone_number, phone_number, hashed, full_name || '']);
-            return { responseCode: '00', message: 'ລົງທະບຽນສຳເລັດ',
-                data: { user_id: result.insertId } };
+            return {
+                responseCode: '00', message: 'ລົງທະບຽນສຳເລັດ',
+                data: { user_id: result.insertId }
+            };
         }
         catch (error) {
             return { responseCode: '99', message: error.message };
@@ -676,10 +702,89 @@ let usersService = class usersService {
             return { responseCode: '99', message: error.message };
         }
     }
+    async OtpDriverByPhone(dto) {
+        try {
+            console.log('Checking phone:', dto.phone);
+            const query = `SELECT OTP_code FROM user_otp WHERE phone_number = ? LIMIT 1`;
+            const result = await this.dataSource.query(query, [dto.phone]);
+            if (result.length > 0) {
+                return {
+                    result: 'YES',
+                    message: 'Driver with this phone exists',
+                    otp: result[0].OTP,
+                };
+            }
+            else {
+                return {
+                    result: 'NO',
+                    message: 'No driver found with this phone',
+                    otp: null,
+                };
+            }
+        }
+        catch (error) {
+            console.error('Error fetching driver:', error);
+            return {
+                result: 'ERROR',
+                message: 'Failed to check driver by phone',
+                error: error.message,
+            };
+        }
+    }
+    async createOTP(createOtpDto) {
+        const { phone } = createOtpDto;
+        console.log('Creating OTP for phone:', phone);
+        const app = 'customer';
+        const date = new Date();
+        const todayCountQuery = `
+    SELECT COUNT(*) as count 
+    FROM user_otp
+    WHERE phone_number = '${phone}'
+  `;
+        console.log('Executing OTP count query:', todayCountQuery);
+        const countResult = await this.dataSource.query(todayCountQuery);
+        const count = countResult[0]?.count || 0;
+        console.log(`OTPs created today for ${phone}:`, count);
+        if (count >= 5) {
+            return {
+                success: false,
+                message: 'You have reached the daily OTP limit (5). Please try again tomorrow.',
+            };
+        }
+        let otp = this.generateOtp();
+        while (await this.isOtpExist(otp)) {
+            otp = this.generateOtp();
+        }
+        const message = `Your OTP code is ${otp}`;
+        const sql = `
+  INSERT INTO user_otp (phone_number, otp_code, expires_at)
+  VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE))
+`;
+        const smsData = {
+            title: 'OTP',
+            phone: phone,
+            message: message,
+        };
+        this.smsService.sendSMS(smsData, 'Sabaikee-App');
+        const result = await this.dataSource.query(sql, [phone, otp]);
+        return {
+            success: true,
+            otp,
+            insertedId: result.insertId,
+        };
+    }
+    generateOtp() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+    async isOtpExist(otp) {
+        const sql = `SELECT COUNT(*) as count FROM user_otp WHERE otp_code = ?`;
+        const result = await this.dataSource.query(sql, [otp]);
+        return result[0].count > 0;
+    }
 };
 exports.usersService = usersService;
 exports.usersService = usersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeorm_1.DataSource])
+    __metadata("design:paramtypes", [typeorm_1.DataSource, sms_service_1.SmsService])
 ], usersService);
 //# sourceMappingURL=users.service.js.map

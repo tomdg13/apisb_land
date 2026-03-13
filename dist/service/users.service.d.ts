@@ -1,8 +1,10 @@
 import { DataSource } from 'typeorm';
-import { userstDto } from 'src/dto/users.dto';
+import { CustomerpDto, userstDto } from 'src/dto/users.dto';
+import { SmsService } from './sms.service';
 export declare class usersService {
     private dataSource;
-    constructor(dataSource: DataSource);
+    private readonly smsService;
+    constructor(dataSource: DataSource, smsService: SmsService);
     find(userstdto: userstDto): Promise<any>;
     getAll(): Promise<any>;
     create(body: any): Promise<any>;
@@ -41,4 +43,10 @@ export declare class usersService {
     register(dto: any): Promise<any>;
     adminResetPassword(userId: number, newPassword: string, resetByUserId?: number): Promise<any>;
     selfResetPassword(phone: string, newPassword: string): Promise<any>;
+    OtpDriverByPhone(dto: CustomerpDto): Promise<any>;
+    createOTP(createOtpDto: {
+        phone: string;
+    }): Promise<any>;
+    private generateOtp;
+    private isOtpExist;
 }

@@ -27,3 +27,19 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 }
+
+
+export class CustomerpDto {
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  id?: number;
+}
+
+export interface TelbizSmsRequest {
+    title: string;
+    phone: string;
+    message: string;
+}

@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { userstDto } from 'src/dto/users.dto';
+import { CustomerpDto, TelbizSmsRequest, userstDto } from 'src/dto/users.dto';
 import * as bcrypt from 'bcrypt';  // ✅ single import at top — no require() anywhere
+import { SmsService } from './sms.service';
 
 @Injectable()
 export class usersService {
-  constructor(private dataSource: DataSource) {}
+  constructor(private dataSource: DataSource, private readonly smsService: SmsService) { }
 
   // ── LOGIN ─────────────────────────────────────────────────
   async find(userstdto: userstDto): Promise<any> {
@@ -29,7 +30,7 @@ export class usersService {
       const user = result[0];
       console.log('[LOGIN] user found:', { user_id: user.user_id, role: user.role, is_active: user.is_active });
 
-      if (!user.is_active)     return { responseCode: '03', message: 'Account is inactive' };
+      if (!user.is_active) return { responseCode: '03', message: 'Account is inactive' };
       if (user.account_locked) return { responseCode: '04', message: 'Account is locked' };
 
       const isPasswordValid = await bcrypt.compare(password, user.password_hash);
@@ -106,8 +107,8 @@ export class usersService {
                             department, role, is_active, created_by, branch_id, counter_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [body.username, body.full_name, body.email || null, body.phone_number, hash,
-         body.department || null, body.role || 'Customer', body.is_active ?? 1,
-         body.created_by || 'admin', body.branch_id || null, body.counter_id || null]);
+        body.department || null, body.role || 'Customer', body.is_active ?? 1,
+        body.created_by || 'admin', body.branch_id || null, body.counter_id || null]);
       return { responseCode: '00', message: 'User created successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -207,7 +208,7 @@ export class usersService {
         `INSERT INTO roles (role_name, role_description, is_active, created_by)
          VALUES (?, ?, ?, ?)`,
         [body.role_name, body.role_description || null,
-         body.is_active ?? 1, body.created_by || 'admin']);
+        body.is_active ?? 1, body.created_by || 'admin']);
       return { responseCode: '00', message: 'Role created successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -218,7 +219,7 @@ export class usersService {
         `UPDATE roles SET role_name = ?, role_description = ?,
          is_active = ?, last_modified_by = ? WHERE role_id = ?`,
         [body.role_name, body.role_description || null,
-         body.is_active ?? 1, body.modified_by || 'admin', id]);
+        body.is_active ?? 1, body.modified_by || 'admin', id]);
       return { responseCode: '00', message: 'Role updated successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -229,8 +230,10 @@ export class usersService {
         `SELECT COUNT(*) as cnt FROM users WHERE role =
          (SELECT role_name FROM roles WHERE role_id = ?)`, [id]);
       if (inUse[0].cnt > 0)
-        return { responseCode: '01',
-          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} users ໃຊ້ role ນີ້` };
+        return {
+          responseCode: '01',
+          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} users ໃຊ້ role ນີ້`
+        };
       await this.dataSource.query(`DELETE FROM roles WHERE role_id = ?`, [id]);
       return { responseCode: '00', message: 'Role deleted successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
@@ -255,7 +258,7 @@ export class usersService {
                             parent_menu_id, menu_order, is_active)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [body.menu_name, body.menu_icon || null, body.menu_path || null,
-         body.parent_menu_id || null, body.menu_order || 99, body.is_active ?? 1]);
+        body.parent_menu_id || null, body.menu_order || 99, body.is_active ?? 1]);
       return { responseCode: '00', message: 'Menu created successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -266,7 +269,7 @@ export class usersService {
         `UPDATE menus SET menu_name = ?, menu_icon = ?, menu_path = ?,
          parent_menu_id = ?, menu_order = ?, is_active = ? WHERE menu_id = ?`,
         [body.menu_name, body.menu_icon || null, body.menu_path || null,
-         body.parent_menu_id || null, body.menu_order || 99, body.is_active ?? 1, id]);
+        body.parent_menu_id || null, body.menu_order || 99, body.is_active ?? 1, id]);
       return { responseCode: '00', message: 'Menu updated successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -276,8 +279,10 @@ export class usersService {
       const children = await this.dataSource.query(
         `SELECT COUNT(*) as cnt FROM menus WHERE parent_menu_id = ?`, [id]);
       if (children[0].cnt > 0)
-        return { responseCode: '01',
-          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${children[0].cnt} sub-menus` };
+        return {
+          responseCode: '01',
+          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${children[0].cnt} sub-menus`
+        };
       await this.dataSource.query(
         `DELETE FROM role_menu_mapping WHERE menu_id = ?`, [id]);
       await this.dataSource.query(`DELETE FROM menus WHERE menu_id = ?`, [id]);
@@ -308,7 +313,7 @@ export class usersService {
           `SELECT mapping_id FROM role_menu_mapping
            WHERE role_id = ? AND menu_id = ?`, [m.role_id, m.menu_id]);
         if (m.can_view === 0 && m.can_create === 0 &&
-            m.can_edit === 0 && m.can_delete === 0) {
+          m.can_edit === 0 && m.can_delete === 0) {
           if (existing.length > 0)
             await this.dataSource.query(
               `DELETE FROM role_menu_mapping WHERE mapping_id = ?`,
@@ -319,14 +324,14 @@ export class usersService {
              SET can_view = ?, can_create = ?, can_edit = ?, can_delete = ?
              WHERE mapping_id = ?`,
             [m.can_view, m.can_create, m.can_edit, m.can_delete,
-             existing[0].mapping_id]);
+            existing[0].mapping_id]);
         } else {
           await this.dataSource.query(
             `INSERT INTO role_menu_mapping
              (role_id, menu_id, can_view, can_create, can_edit, can_delete, created_by)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [m.role_id, m.menu_id, m.can_view, m.can_create,
-             m.can_edit, m.can_delete, 'admin']);
+            m.can_edit, m.can_delete, 'admin']);
         }
       }
       return { responseCode: '00', message: 'Role map updated successfully' };
@@ -354,7 +359,7 @@ export class usersService {
         `INSERT INTO categories (name, name_en, icon, sort_order, is_active)
          VALUES (?, ?, ?, ?, ?)`,
         [body.name, body.name_en || null, body.icon || null,
-         body.sort_order || 99, body.is_active ?? 1]);
+        body.sort_order || 99, body.is_active ?? 1]);
       return { responseCode: '00', message: 'Category created successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -365,7 +370,7 @@ export class usersService {
         `UPDATE categories SET name = ?, name_en = ?, icon = ?,
          sort_order = ?, is_active = ? WHERE category_id = ?`,
         [body.name, body.name_en || null, body.icon || null,
-         body.sort_order || 99, body.is_active ?? 1, id]);
+        body.sort_order || 99, body.is_active ?? 1, id]);
       return { responseCode: '00', message: 'Category updated successfully' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -375,8 +380,10 @@ export class usersService {
       const inUse = await this.dataSource.query(
         `SELECT COUNT(*) as cnt FROM listings WHERE category_id = ?`, [id]);
       if (inUse[0].cnt > 0)
-        return { responseCode: '01',
-          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ category ນີ້` };
+        return {
+          responseCode: '01',
+          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ category ນີ້`
+        };
       await this.dataSource.query(
         `DELETE FROM categories WHERE category_id = ?`, [id]);
       return { responseCode: '00', message: 'Category deleted successfully' };
@@ -422,8 +429,10 @@ export class usersService {
       const inUse = await this.dataSource.query(
         `SELECT COUNT(*) as cnt FROM listings WHERE province_id = ?`, [id]);
       if (inUse[0].cnt > 0)
-        return { responseCode: '01',
-          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ province ນີ້` };
+        return {
+          responseCode: '01',
+          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ province ນີ້`
+        };
       await this.dataSource.query(
         `DELETE FROM provinces WHERE province_id = ?`, [id]);
       return { responseCode: '00', message: 'Province deleted successfully' };
@@ -470,8 +479,10 @@ export class usersService {
       const inUse = await this.dataSource.query(
         `SELECT COUNT(*) as cnt FROM listings WHERE district_id = ?`, [id]);
       if (inUse[0].cnt > 0)
-        return { responseCode: '01',
-          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ district ນີ້` };
+        return {
+          responseCode: '01',
+          message: `ບໍ່ສາມາດລຶບໄດ້ — ມີ ${inUse[0].cnt} listings ໃຊ້ district ນີ້`
+        };
       await this.dataSource.query(
         `DELETE FROM districts WHERE district_id = ?`, [id]);
       return { responseCode: '00', message: 'District deleted successfully' };
@@ -558,12 +569,22 @@ export class usersService {
         `UPDATE user_otp SET is_used = 1
          WHERE phone_number = ? AND otp_type = ? AND is_used = 0`,
         [phone, type]);
-      const otp       = this._genOtp();
+      const otp = this._genOtp();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
       await this.dataSource.query(
         `INSERT INTO user_otp (phone_number, otp_code, otp_type, expires_at)
          VALUES (?, ?, ?, ?)`, [phone, otp, type, expiresAt]);
       console.log(`[OTP] ${phone} → ${otp} (${type})`);
+      // send SMS
+      try {
+        await this.smsService.sendSMS({
+          title: 'OTP',
+          phone: phone,
+          message: `Your OTP code is ${otp}`,
+        }, 'Sabaikee-App');
+      } catch (smsErr) {
+        console.error('[OTP] SMS failed:', smsErr.message);
+      }
       return { responseCode: '00', message: 'OTP ສົ່ງສຳເລັດ' };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
@@ -590,8 +611,10 @@ export class usersService {
         `UPDATE user_otp SET attempt_count = attempt_count + 1 WHERE otp_id = ?`,
         [otp.otp_id]);
       if (otp.otp_code !== code)
-        return { responseCode: '04',
-          message: `OTP ບໍ່ຖືກຕ້ອງ (ເຫຼືອ ${4 - otp.attempt_count} ຄັ້ງ)` };
+        return {
+          responseCode: '04',
+          message: `OTP ບໍ່ຖືກຕ້ອງ (ເຫຼືອ ${4 - otp.attempt_count} ຄັ້ງ)`
+        };
       await this.dataSource.query(
         `UPDATE user_otp SET is_verified = 1, is_used = 1, verified_at = NOW()
          WHERE otp_id = ?`, [otp.otp_id]);
@@ -620,8 +643,10 @@ export class usersService {
            (username, phone_number, password_hash, full_name, role, is_active, created_by)
          VALUES (?, ?, ?, ?, 'Customer', 1, 'self-register')`,
         [phone_number, phone_number, hashed, full_name || '']);
-      return { responseCode: '00', message: 'ລົງທະບຽນສຳເລັດ',
-        data: { user_id: result.insertId } };
+      return {
+        responseCode: '00', message: 'ລົງທະບຽນສຳເລັດ',
+        data: { user_id: result.insertId }
+      };
     } catch (error) { return { responseCode: '99', message: error.message }; }
   }
 
@@ -720,5 +745,116 @@ export class usersService {
       console.error(`${tag} ❌ EXCEPTION —`, error.message);
       return { responseCode: '99', message: error.message };
     }
+  }
+
+
+
+
+
+
+  async OtpDriverByPhone(dto: CustomerpDto): Promise<any> {
+    try {
+      console.log('Checking phone:', dto.phone);
+
+      const query = `SELECT OTP_code FROM user_otp WHERE phone_number = ? LIMIT 1`;
+      const result = await this.dataSource.query(query, [dto.phone]);
+
+      if (result.length > 0) {
+        return {
+          result: 'YES',
+          message: 'Driver with this phone exists',
+          otp: result[0].OTP,  // Return the OTP value here
+        };
+      } else {
+        return {
+          result: 'NO',
+          message: 'No driver found with this phone',
+          otp: null,
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching driver:', error);
+      return {
+        result: 'ERROR',
+        message: 'Failed to check driver by phone',
+        error: error.message,
+      };
+    }
+  }
+
+  // ✅ Existing OTP generation and insert
+  async createOTP(createOtpDto: { phone: string }): Promise<any> {
+    const { phone } = createOtpDto;
+
+    console.log('Creating OTP for phone:', phone);
+    const app = 'customer';  // fixed value
+    const date = new Date();
+
+    // 1. Check how many OTPs already created today for this phone
+    const todayCountQuery = `
+    SELECT COUNT(*) as count 
+    FROM user_otp
+    WHERE phone_number = '${phone}'
+  `;
+
+    console.log('Executing OTP count query:', todayCountQuery);
+    const countResult = await this.dataSource.query(todayCountQuery);
+
+
+    const count = countResult[0]?.count || 0;
+    console.log(`OTPs created today for ${phone}:`, count);
+    if (count >= 5) {
+      // If 5 or more OTPs already created today, prevent new insert
+      return {
+        success: false,
+        message: 'You have reached the daily OTP limit (5). Please try again tomorrow.',
+      };
+    }
+
+    // 2. Generate unique OTP
+    let otp = this.generateOtp();
+    while (await this.isOtpExist(otp)) {
+      otp = this.generateOtp();
+    }
+
+    const message = `Your OTP code is ${otp}`;
+
+
+    // 3. Insert new OTP
+ const sql = `
+  INSERT INTO user_otp (phone_number, otp_code, expires_at)
+  VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE))
+`;
+
+    /** Send SMS gateway here */
+    /** Object Request to Sms provider */
+    const smsData: TelbizSmsRequest = {
+      title: 'OTP',
+      phone: phone,
+      message: message,
+    };
+    // Send SMS using SmsService
+    this.smsService.sendSMS(smsData, 'Sabaikee-App')
+
+    // --------------------------------------------------------------------------------------------------------------------------OFF API OTP
+
+    const result = await this.dataSource.query(sql, [phone, otp]);
+
+
+    return {
+      success: true,
+      otp,
+      insertedId: result.insertId,
+    };
+  }
+  // ✅ Generate random 6-digit OTP
+  private generateOtp(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+  // ✅ Check if OTP already exists in the table
+  private async isOtpExist(otp: string): Promise<boolean> {
+    const sql = `SELECT COUNT(*) as count FROM user_otp WHERE otp_code = ?`;
+    const result = await this.dataSource.query(sql, [otp]);
+    return result[0].count > 0;
   }
 }
